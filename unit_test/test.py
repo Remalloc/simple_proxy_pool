@@ -1,13 +1,13 @@
 import asyncio
 import time
+import unittest
 from functools import wraps
-from unittest import TestCase
 
 from simple_proxy_pool.proxy_pool import ProxyPool
 from simple_proxy_pool.spider import XiCiSpider
 
 
-class TestBase(TestCase):
+class TestBase(unittest.TestCase):
     def verify_url(self, url):
         self.assertRegex(url, r"http://\d+\.\d+\.\d+\.\d+:\d+")
 
@@ -78,3 +78,7 @@ class TestProxyPool(TestBase):
         urls = self.pl.get_https_urls(nums=15)
         self.assertEqual(len(urls), nums)
         self.verify_urls(urls)
+
+
+if __name__ == '__main__':
+    unittest.main()
