@@ -15,6 +15,8 @@ import time
 from simple_proxy_pool.proxy_pool import ProxyPool
 
 pl = ProxyPool()
+pl.test_http_web = "http://www.baidu.com"  # 同一个代理访问不同的网站速度是不相同的,建议设置成想要访问的网站,默认是知乎官网
+pl.test_https_web = "https://www.baidu.com"
 pl.run()
 time.sleep(60) # 初次启动可能没有可以使用的代理,需要等待一段时间
 http = pl.get_one_http_url()
