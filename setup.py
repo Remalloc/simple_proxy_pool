@@ -13,5 +13,6 @@ setup(
         "lxml>=4.3.0"
     ],
     python_requires=">=3.6",
-    license='BSD'
+    license="BSD",
+    platforms="any"
 )
