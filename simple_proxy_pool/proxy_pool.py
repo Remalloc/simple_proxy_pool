@@ -33,23 +33,25 @@ class ProxyPool(object):
             set_logger_config(log_config)
         self._process = None
 
-    async def _filter_urls(self, urls: list) -> list:
+    async def _filter_urls(self, urls: list, is_https: bool = False) -> list:
         """
         Filter can't use proxy connections.
         :param urls: The proxy URLs list. Example: ["http://1234:9090","https://1234:9090"]
+        :param is_https: True or False, default False.
+        This will determine whether to test the connection using the HTTPS protocol.
         :return: Filtered URLs.
         """
 
         async def verify_proxy(proxy_url: str):
             """
             Verify proxy connection can be connected.
-            :param proxy_url: If url starts with "https://" will access self.test_https_web,
-            otherwise access self..test_http_web.
+            :param proxy_url: If protocol is "https" will access self.test_https_web,
+            otherwise access self.test_http_web.
             :return: Only test website response status equal 200 will return url, otherwise return None.
             """
             try:
                 async with aiohttp.ClientSession(headers=REQUEST_HEADERS, timeout=self.proxy_timeout) as session:
-                    if proxy_url.startswith("https://"):
+                    if is_https:
                         async with session.get(self.test_https_web, proxy=proxy_url) as resp:
                             return proxy_url if resp.status == 200 else None
                     else:
@@ -69,11 +71,11 @@ class ProxyPool(object):
         for spider in self._spiders:
             if len(self._http_list) < self.total:
                 all_urls = await spider.get_http_urls()
-                urls = await self._filter_urls(all_urls)
+                urls = await self._filter_urls(all_urls, is_https=False)
                 self._http_list.extend(urls)
             if len(self._https_list) < self.total:
                 all_urls = await spider.get_https_urls()
-                urls = await self._filter_urls(all_urls)
+                urls = await self._filter_urls(all_urls, is_https=True)
                 self._https_list.extend(urls)
 
     async def main(self):
@@ -101,7 +103,7 @@ class ProxyPool(object):
     def get_http_urls(self, nums: int = 0) -> list:
         """
         Choice a number of http urls.
-        :param nums: The number of urls what you want to use.
+        :param nums: The number of urls what you want to use.If nums is 0, will return all proxies.
         Note: If nums greater than current list size then maybe get repeat url.
         :return: Http proxy list.
         """
@@ -124,7 +126,7 @@ class ProxyPool(object):
         """
         Choice a number of https urls.
         :param nums: The number of urls what you want to use.
-        Note: If nums greater than current list size then maybe get repeat url.
+        Note: If nums greater than current list size then maybe get repeat url.If nums is 0, will return all proxies.
         :return: Https proxy list.
         """
         temp_list = self._https_list[:]
