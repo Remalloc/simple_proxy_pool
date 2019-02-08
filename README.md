@@ -1,7 +1,7 @@
 # Simple Proxy Pool
 免费、简单、灵活的代理连接池
 ## 安装与卸载
-安装包下载 或 `clone git@github.com:Remalloc/simple_proxy_pool.git`<br>
+[安装包下载](https://github.com/Remalloc/simple_proxy_pool/releases/download/v1.0/simple_proxy_pool-1.0.tar.gz) 或 `clone git@github.com:Remalloc/simple_proxy_pool.git`<br>
 ```
 # 需要pip和setuptools
 # 进入程序目录安装
