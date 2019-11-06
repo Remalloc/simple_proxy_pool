@@ -124,6 +124,10 @@ class ProxyPool(object):
     def close(self):
         """关闭代理连接池并清空代理列表,如果连接池已开启"""
         pass
+    
+    def is_alive(self) -> bool:
+        """当前连接池是否存活"""
+        pass
 ```
 ## 扩展
 本程序可以很方便的定制自己所需要的功能,下面具体介绍几种场景.
