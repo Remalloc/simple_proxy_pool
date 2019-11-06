@@ -174,7 +174,7 @@ class ProxyPool(object):
         """Close proxy pool if that running"""
         self._close = True
 
-    def is_alive(self):
+    def is_alive(self) -> bool:
         """:return Does proxy pool running"""
         return self._thread and self._thread.is_alive()
 
