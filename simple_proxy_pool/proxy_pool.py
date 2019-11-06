@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import time
-from multiprocessing import Process, Manager
+from threading import Thread
 from random import choice, choices
 
 from simple_proxy_pool.config import REQUEST_HEADERS
@@ -26,12 +26,12 @@ class ProxyPool(object):
         self.test_http_web = "http://www.zhihu.com"
         self.test_https_web = "https://www.zhihu.com"
         self._spiders = [XiCiSpider()]
-        self._manager = Manager()
-        self._http_list = self._manager.list()
-        self._https_list = self._manager.list()
+        self._close = False
+        self._http_list = []
+        self._https_list = []
         if log_config:
             set_logger_config(log_config)
-        self._process = None
+        self._thread = None
 
     async def _filter_urls(self, urls: list, is_https: bool = False) -> list:
         """
@@ -83,13 +83,21 @@ class ProxyPool(object):
         Timing filtering proxy list and acquire list from spider website
         when http list or https list less than self.total.
         """
-        while True:
-            if len(self._https_list) < self.total or len(self._https_list) < self.total:
-                await self.acquire_url_list()
-            else:
-                self._http_list = await self._filter_urls(self._http_list)
-                self._https_list = await self._filter_urls(self._https_list)
-            time.sleep(self.crawl_interval)
+        self._close = False
+        try:
+            while True:
+                if self._close:
+                    return
+                if len(self._https_list) < self.total or len(self._https_list) < self.total:
+                    await self.acquire_url_list()
+                else:
+                    self._http_list = await self._filter_urls(self._http_list)
+                    self._https_list = await self._filter_urls(self._https_list)
+                time.sleep(self.crawl_interval)
+        finally:
+            self._close = True
+            self._http_list = []
+            self._https_list = []
 
     def set_spiders(self, spiders: list):
         """
@@ -144,24 +152,31 @@ class ProxyPool(object):
         """
         return choice(self._https_list) if self._https_list else None
 
-    def run(self):
-        """Start proxy pool by daemon process"""
+    def run(self) -> bool:
+        """
+        Start proxy pool by daemon thread, only one thread running on the same time.
+        :return: Create a new thread succeed or failed.
+        """
+        if self.is_alive():
+            return False
 
         def start_loop():
-            loop = asyncio.get_event_loop()
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
             loop.run_until_complete(self.main())
 
-        self._process = Process(target=start_loop)
-        self._process.daemon = True
-        self._process.start()
+        self._thread = Thread(target=start_loop)
+        self._thread.daemon = True
+        self._thread.start()
+        return True
 
     def close(self):
         """Close proxy pool if that running"""
-        if self._process:
-            self._process.terminate()
-            # Clean http and https list.
-            self._https_list[:] = []
-            self._http_list[:] = []
+        self._close = True
+
+    def is_alive(self):
+        """:return Does proxy pool running"""
+        return self._thread and self._thread.is_alive()
 
 
 def main():
